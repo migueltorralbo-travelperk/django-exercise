@@ -13,8 +13,10 @@ RECIPES_URL = reverse('recipe:recipe-list')
 
 
 class RecipeApiTests(TestCase):
+    """Test class for recipes"""
 
     def test_retrieve_recipes_list(self):
+        """Test retrieving recipes from the db"""
         recipe1 = Recipe.objects.create(name="Pizza napolitana", description="Traditional italian pizza")
         recipe2 = Recipe.objects.create(name="Paella", description="Traditional Valencia food")
 
@@ -25,6 +27,7 @@ class RecipeApiTests(TestCase):
         self.assertEqual(res.data, serialized.data)
 
     def test_create_recipe(self):
+        """Test creating a new recipe in the database"""
         payload = {
             'name': 'Spanish omelete',
             'description': 'Best food in the world'
@@ -37,6 +40,7 @@ class RecipeApiTests(TestCase):
         self.assertEqual(recipe.name, res.data['name'])
 
     def test_delete_recipe(self):
+        """Test deleting a recipe in the database"""
         recipe = Recipe.objects.create(name="Cheesecake", description="Delicious traditional cheesecake")
 
         recipes_delete_url = reverse('recipe:recipe-detail', kwargs={'pk': recipe.pk})
@@ -48,6 +52,7 @@ class RecipeApiTests(TestCase):
         self.assertFalse(exists)
 
     def test_update_recipe(self):
+        """Test updating a recipe in the database"""
         recipe = Recipe.objects.create(name="Cheesecake", description="Delicious traditional cheesecake")
         payload = {
             'name': 'New recipe',
@@ -62,6 +67,7 @@ class RecipeApiTests(TestCase):
         self.assertEqual(recipe.name, payload['name'])
 
     def test_create_with_ingredient(self):
+        """Test create a recipe with ingredients in thed database"""
         payload = {
             'name': 'Pizza',
             'description': 'Put it in the oven',
@@ -74,7 +80,25 @@ class RecipeApiTests(TestCase):
         serialized = RecipeSerializer(recipes)
         self.assertEqual(res.data, serialized.data)
 
-    #def test_update_recipe_with_details(self):
+    def test_update_recipe_with_details(self):
+        """Test update a reicpe with ingredients in the database"""
+        recipe = Recipe.objects.create(name="Cheesecake", description="Delicious traditional cheesecake")
+        Ingredient.objects.create(name='Cheese', recipe=recipe)
+        Ingredient.objects.create(name='Milk', recipe=recipe)
+
+        payload = {
+            'name': 'Pizza',
+            'description': 'Put it in the oven',
+            'ingredients': [{'name': 'casa-tarradellas'}]
+        }
+        recipes_update_url = reverse('recipe:recipe-detail', kwargs={'pk': recipe.pk})
+        res = self.client.patch(recipes_update_url, payload, content_type='application/json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        recipe.refresh_from_db()
+        self.assertEqual(recipe.name, payload['name'])
+        self.assertEqual(recipe.ingredients.count(), 1)
+        self.assertEqual(recipe.ingredients.all()[0].name, payload['ingredients'][0]['name'])
 
 
 class IngredientApiTests(TestCase):
@@ -84,9 +108,9 @@ class IngredientApiTests(TestCase):
         self.recipe = Recipe.objects.create(name="Cheesecake", description="Delicious traditional cheesecake")
 
     def test_retrieve_ingredients_list(self):
+        """Test retrieve ingredients from ingredients URL"""
         Ingredient.objects.create(name='Cheese', recipe=self.recipe)
         Ingredient.objects.create(name='Milk', recipe=self.recipe)
-        print(f'INGREDIENTS_URL{INGREDIENTS_URL}')
         res = self.client.get(INGREDIENTS_URL)
         ingredients = Ingredient.objects.all().order_by('-name')
         serialized = IngredientSerializer(ingredients, many=True)
@@ -94,9 +118,10 @@ class IngredientApiTests(TestCase):
         self.assertEqual(res.data, serialized.data)
 
     def test_create_ingredient(self):
+        """Test create a new ingredient"""
         payload = {
             'name': 'Cheese',
-            'recipe': self.recipe
+            'recipe': self.recipe.id
         }
         res = self.client.post(INGREDIENTS_URL, payload)
 

@@ -10,7 +10,7 @@ from django.conf import settings
 
 
 class Ingredient(models.Model):
-
+    """Ingredient model"""
     name = models.CharField(max_length=225)
     recipe = models.ForeignKey(
         'Recipe',
@@ -23,6 +23,7 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
+    """Recipe model"""
     name = models.CharField(max_length=225)
     description = models.CharField(max_length=1000)
 

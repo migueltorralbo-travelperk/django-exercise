@@ -7,6 +7,7 @@ class ModelTests(TestCase):
     """Models tests"""
 
     def test_model_recipe_str(self):
+        """Test correct string cast"""
         recipe = Recipe.objects.create(
             name='Pizza napolitana',
             description='Classic napolitana pizza, delicious'
@@ -14,6 +15,7 @@ class ModelTests(TestCase):
         self.assertEqual(str(recipe), recipe.name)
 
     def test_model_ingredient_str(self):
+        """Test correct string cast"""
         recipe = Recipe.objects.create(
             name='Pizza napolitana',
             description='Classic napolitana pizza, delicious'
