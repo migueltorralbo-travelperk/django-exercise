@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
-
+import json
 from rest_framework import status
 from rest_framework.test import APIClient
 from core.models import Ingredient
@@ -24,7 +24,27 @@ class RecipeApiTests(TestCase):
         recipes = Recipe.objects.all().order_by('-name')
         serialized = RecipeSerializer(recipes, many=True)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+        res.render()
         self.assertEqual(res.data, serialized.data)
+
+    def test_retrieve_correct_format_data(self):
+        """Test retrieving recipes with the correct JSON format"""
+        recipe = Recipe.objects.create(name="Pizza napolitana", description="Traditional italian pizza")
+        Ingredient.objects.create(name='Cheese', recipe=recipe)
+        Ingredient.objects.create(name='Tomato', recipe=recipe)
+        expected_json = [{"id":1,"name":"Pizza napolitana","description":"Traditional italian pizza","ingredients":[{"name":"Cheese"},{"name":"Tomato"}]}]
+        res = self.client.get(RECIPES_URL)
+
+        print(f'res.content:{json.loads(res.content)}')
+        print(f'expected_json:{expected_json}')
+
+        self.assertEqual(json.loads(res.content), expected_json)
+
+    def test_fetch_unexisting_recipe_id(self):
+        """Test error when retrieving a unexisting id"""
+        res = self.client.get(f'{RECIPES_URL}4/')
+
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_create_recipe(self):
         """Test creating a new recipe in the database"""
@@ -38,6 +58,14 @@ class RecipeApiTests(TestCase):
 
         recipe = Recipe.objects.get(name=res.data['name'])
         self.assertEqual(recipe.name, res.data['name'])
+
+    def test_create_recipe_invalid_data(self):
+        """Test creating a new recipe with missing objects"""
+        payload = {
+            'name': 'Spanish omelete'
+        }
+        res = self.client.post(RECIPES_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_delete_recipe(self):
         """Test deleting a recipe in the database"""
